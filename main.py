@@ -16,6 +16,16 @@ import fastapi.encoders as encoders
 # Docs exposed at: http://localhost:8000/docs
 app = fastapi.FastAPI()
 
+persons = [
+    {"name": "Judy", "age": 10},
+    {"name": "Jeremy", "age": 20},
+    {"name": "Max", "age": 30},
+    {"name": "Jonas", "age": 50},
+    {"name": "Sam", "age": 60},
+    {"name": "Ashley", "age": 70},
+    {"name": "Jack", "age": 80}
+]
+
 
 # Example: http://localhost:8000
 # Returns: {"gruss":"hallo","id":1,"name":"Max"}
@@ -29,11 +39,19 @@ def index():
     })
 
 
-# Example: http://localhost:8000/items?limit=10&even=True
-# Returns: [{"magic_number":0},{"magic_number":2},{"magic_number":4},{"magic_number":6},{"magic_number":8}]
-@app.get("/items")
-def index(even: bool = False, limit: int = 100):
+# Catch GET/POST-Parameters directly with arguments in request-handlers
+# Example: http://localhost:8000/items?filter=m&limit=2
+# Returns: ["Jeremy","Max"]
+@app.get("/persons")
+def items(filter: str = "", limit: int = 10):
     # explicitly encode objects to json-response with FastAPI:
-    return encoders.jsonable_encoder([{
-        "magic_number": i
-    } for i in range(0, limit) if not even or i % 2 == 0])
+    filtered = [p for p in persons if filter in p.get("name").lower()][0:limit]
+    return encoders.jsonable_encoder(filtered)
+
+
+# Catch Path-Parameters with "/../{key}" pattern in the path
+@app.get("/person/{name}")
+def add_item(name: str):
+    # get first element by predicate in list using a generator:
+    generator = (p for p in persons if p.get("name").lower() == name)
+    return next(generator, None)
