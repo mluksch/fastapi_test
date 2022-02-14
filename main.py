@@ -21,6 +21,13 @@ import pydantic
 app = fastapi.FastAPI()
 
 
+# Typing is essential & important in FastAPI:
+# Because all validations & even returned response fields
+# are determined by types in the request handler
+# Also typing define what parameters in the request handler
+# belong to the request body (BaseModel)
+# or to the query parameters
+
 # Send a request body: Declare custom subclass of Pydantic's BaseModel
 # and define static class fields (similar to SQLAlchemy-Models)
 class Person(pydantic.BaseModel):
@@ -28,7 +35,7 @@ class Person(pydantic.BaseModel):
     age: typing.Optional[int]
 
 
-persons: [Person] = [Person(**kwargs) for kwargs in [
+persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
     {"name": "Judy", "age": 10},
     {"name": "Jeremy", "age": 20},
     {"name": "Max", "age": 30},
@@ -58,21 +65,23 @@ def index():
 
 # Define Custom-Enum
 class OrderBy(str, enum.Enum):
-    age = "age"
-    name = "name"
+    AGE = "age"
+    NAME = "name"
 
 
 # Catch GET/POST-Parameters directly with arguments in request-handlers
 # Example: http://localhost:8000/persons?filter=j&limit=2&orderby=age
 # Returns: [{"name":"Judy","age":10},{"name":"Jeremy","age":20}]
-# Parameters: Use Python typings for each argument
+# - Parameters: Use Python typings for each argument
 # FastAPI will evaluate each type and use them for the Docs
-@app.get("/persons")
+# - Response: FastAPI will take care of filtering out all
+# the data that is not declared in the output model (using Pydantic)
+@app.get("/persons", response_model=typing.List[Person])
 async def items(
         # defining Optional parameter:
         filter: typing.Optional[str] = None,
         limit: int = 10,
-        orderby: OrderBy = OrderBy.name
+        orderby: OrderBy = OrderBy.NAME
 ):
     """
     Returns all persons based on filter, limited & ordered
@@ -80,14 +89,14 @@ async def items(
 
     # builtin-function "sorted" returns new list
     def key_func(p: Person) -> typing.Union[str, int]:
-        if orderby == OrderBy.name:
+        if orderby == OrderBy.NAME:
             return p.name
-        elif orderby == OrderBy.age:
+        elif orderby == OrderBy.AGE:
             return p.age
 
-    filtered = sorted([p for p in persons
-                       if not filter or filter in p.name.lower()][0: limit],
-                      key=key_func)
+    filtered: [Person] = sorted([p for p in persons
+                                 if not filter or filter in p.name.lower()][0: limit],
+                                key=key_func)
     return filtered
 
 
@@ -96,17 +105,17 @@ async def items(
 # Returns: {"name":"Jack","age":80}
 # Parameters in Request Handlers that are not part of the path
 # are assumed to be provided by query-parameters
-@app.get("/persons/{name}")
+@app.get("/persons/{name}", response_model=typing.Optional[Person])
 def get_person(name: str):
     # use a generator in order to get the first element
     # matching a predicate in a list:
-    generator = (p for p in persons if p.get("name").lower() == name)
+    generator = (p for p in persons if p.name.lower() == name)
     return next(generator, None)
 
 
 # Example: POST-Request to http://localhost:8000/persons
 # Re
-@app.post("/persons")
-async def add_person(person: Person):
+@app.post("/persons", response_model=Person)
+async def add_person(person: Person) -> Person:
     persons.append(person)
-    return encoders.jsonable_encoder(person)
+    return person
