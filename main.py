@@ -32,7 +32,7 @@ import pydantic
 # SwaggerUI-Docs exposed at: http://localhost:8000/docs
 app = fastapi.FastAPI()
 
-
+######### Types in FastAPI #########
 # Typing is essential & important in FastAPI:
 # Because all validations & documentation & behaviour
 # are determined by types used in the request handler
@@ -51,6 +51,7 @@ class Person(pydantic.BaseModel):
     age: typing.Optional[int]
 
 # Define a Custom-Enum
+# Enums are subclass of str + Enum:
 class OrderBy(str, enum.Enum):
     AGE = "age"
     NAME = "name"
@@ -68,6 +69,9 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
     {"name": "Jack", "age": 80}
 ]]
 
+######## Request Handler declaration ########
+# The order of request handler declaration is important/relevant
+# Request Handler whose paths are matching are chosen first by FastAPI.
 
 # Route: http://localhost:8000
 # Returns: {"gruss":"hallo","id":1,"name":"Max"}
@@ -90,6 +94,7 @@ def index():
         "name": "Max"
     })
 
+########## Query-Parameters ##########
 # Route: http://localhost:8000/persons?filter=j&limit=2&orderby=age
 # Returns: [{"name":"Judy","age":10},{"name":"Jeremy","age":20}]
 #
@@ -127,14 +132,14 @@ async def items(
                                 key=key_func)
     return filtered
 
-
+########## Path-Parameters ##########
 # Route: http://localhost:8000/persons/jack
 # Returns: {"name":"Jack","age":80}
 #
 # Parameters that are part of the 
-# path-definition: "/../{my_key}/.."
-# are provided by kwargs-parameter to the request Handler:
-@app.get("/persons/{name}", response_model=typing.Optional[Person])
+# path-definition: "/../{my_key}/.." are called Path-Parameters
+# & are provided by kwargs-parameter to the request Handler:
+@app.get("/persons/{name}", response_model=typing.Optional[Person], response: fas)
 def get_person(name: str):
     # use a generator:
     # first element matching a predicate in a list:
