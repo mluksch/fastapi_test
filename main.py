@@ -7,17 +7,24 @@
 # (3) websocket-support
 # (4) automatic documentation of API endpoints
 
+# standard python3 libs
 import enum
 import typing
 
 import fastapi
 import fastapi.encoders as encoders
 import pydantic
+# Pydantic is mainly a parsing library
+# and is used by FastAPI for:
+# - Defining Types (which are used by FastAPI especially for the Request Body)
+# - data validation of input parameter
+# - parsing & formatting (dataclass) objects to & from JSON
+
 
 # Start app by: "pipenv run uvicorn main:app --reload"
 # "--reload" for hot-reload on code changes
 # Endpoint exposed at: http://localhost:8000
-# Docs exposed at: http://localhost:8000/docs
+# SwaggerUI-Docs exposed at: http://localhost:8000/docs
 app = fastapi.FastAPI()
 
 
