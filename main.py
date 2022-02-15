@@ -7,19 +7,24 @@
 # (3) websocket-support
 # (4) automatic documentation of API endpoints
 
-# standard python3 libs
+# standard python3 libs used for typing:
 import enum
 import typing
 
+# FastApi-Lib
+# FastAPI implements ASGI interface
+# and can be started by any ASGI compliant server
+# such as uvicorn:
+# "pipenv run uvicorn <file>:<FastApi-App-object> --reload"
 import fastapi
 import fastapi.encoders as encoders
-import pydantic
+
 # Pydantic is mainly a parsing library
 # and is used by FastAPI for:
-# - Defining Types (which are used by FastAPI especially for the Request Body)
+# - Defining Dataclass Types (which are used by FastAPI especially for the Request Body)
 # - data validation of input parameter
 # - parsing & formatting (dataclass) objects to & from JSON
-
+import pydantic
 
 # Start app by: "pipenv run uvicorn main:app --reload"
 # "--reload" for hot-reload on code changes
@@ -29,19 +34,30 @@ app = fastapi.FastAPI()
 
 
 # Typing is essential & important in FastAPI:
-# Because all validations & even returned response fields
-# are determined by types in the request handler
-# Also typing define what parameters in the request handler
+# Because all validations & documentation & behaviour
+# are determined by types used in the request handler
+# For example: 
+# Types do define what parameters in the request handler
 # belong to the request body (BaseModel)
 # or to the query parameters
 
-# Send a request body: Declare custom subclass of Pydantic's BaseModel
-# and define static class fields (similar to SQLAlchemy-Models)
+# Declare a Pydantic-Dataclass:
+# By deriving from Basemodel
+# you get json parsing, formatting, validation, documentation,
+# an __init__-constructor with kwargs
+# out of the box
 class Person(pydantic.BaseModel):
     name: str
     age: typing.Optional[int]
 
+# Define a Custom-Enum
+class OrderBy(str, enum.Enum):
+    AGE = "age"
+    NAME = "name"
 
+
+# Fake data
+# normally fetched from a DB:
 persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
     {"name": "Judy", "age": 10},
     {"name": "Jeremy", "age": 20},
@@ -53,36 +69,40 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
 ]]
 
 
-# Example: http://localhost:8000
+# Route: http://localhost:8000
 # Returns: {"gruss":"hallo","id":1,"name":"Max"}
+#
+# The return-value of the request handler will be sent to the client as JSON-response.
+# Should return either a dict or a Pydantic-BaseModel-object
+# in order to get implicitly formatted by FastAPI to a JSON-response
 @app.get("/")
 def index():
     """Documentation available at http://localhost:8000/docs
     Returns some random dict
     """
-    # explicitly encode objects to json-response with FastAPI:
-    # for dict this is not mandatory
-    # but for a non-dict object this json-decoder would be mandatory:
+    # explicit encoding is not required here
+    # because it is a dict.
+    # But normal Python-objects (besides Pydantic-dataclass-objects)
+    # needs to get explicitly decoded to JSON
     return encoders.jsonable_encoder({
         "gruss": "hallo",
         "id": 1,
         "name": "Max"
     })
 
-
-# Define Custom-Enum
-class OrderBy(str, enum.Enum):
-    AGE = "age"
-    NAME = "name"
-
-
-# Catch GET/POST-Parameters directly with arguments in request-handlers
-# Example: http://localhost:8000/persons?filter=j&limit=2&orderby=age
+# Route: http://localhost:8000/persons?filter=j&limit=2&orderby=age
 # Returns: [{"name":"Judy","age":10},{"name":"Jeremy","age":20}]
-# - Parameters: Use Python typings for each argument
-# FastAPI will evaluate each type and use them for the Docs
-# - Response: FastAPI will take care of filtering out all
-# the data that is not declared in the output model (using Pydantic)
+#
+# Any parameter that is not found in the path-definition nor
+# part of a Custom Pydantic-BaseModel is assumed to be provided as
+# Query-Parameter in the Querystring.
+#
+# All Parameters should be typed! 
+# Types are used by FastAPI for validation & documentation.
+# 
+# response_model:
+# Data that is not part of response_model-Pydantic-Dataclass
+# will get filtered out.
 @app.get("/persons", response_model=typing.List[Person])
 async def items(
         # defining Optional parameter:
@@ -91,9 +111,10 @@ async def items(
         orderby: OrderBy = OrderBy.NAME
 ):
     """
-    Returns all persons based on filter, limited & ordered
+    Just some Docstring here for SwaggerUi describing the endpoint.
+    
+    - Returns all persons based on filter, limited & ordered
     """
-
     # builtin-function "sorted" returns new list
     def key_func(p: Person) -> typing.Union[str, int]:
         if orderby == OrderBy.NAME:
@@ -107,20 +128,21 @@ async def items(
     return filtered
 
 
-# Catch Path-Parameters with "/../{key}" pattern in the path
-# Example: http://localhost:8000/persons/jack
+# Route: http://localhost:8000/persons/jack
 # Returns: {"name":"Jack","age":80}
-# Parameters in Request Handlers that are not part of the path
-# are assumed to be provided by query-parameters
+#
+# Parameters that are part of the 
+# path-definition: "/../{my_key}/.."
+# are provided by kwargs-parameter to the request Handler:
 @app.get("/persons/{name}", response_model=typing.Optional[Person])
 def get_person(name: str):
-    # use a generator in order to get the first element
-    # matching a predicate in a list:
+    # use a generator:
+    # first element matching a predicate in a list:
     generator = (p for p in persons if p.name.lower() == name)
     return next(generator, None)
 
 
-# Example: POST-Request to http://localhost:8000/persons
+# Route: POST-Request to http://localhost:8000/persons
 # Re
 @app.post("/persons", response_model=Person)
 async def add_person(person: Person) -> Person:
