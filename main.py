@@ -139,12 +139,14 @@ async def items(
 # Parameters that are part of the 
 # path-definition: "/../{my_key}/.." are called Path-Parameters
 # & are provided by kwargs-parameter to the request Handler:
-@app.get("/persons/{name}", response_model=typing.Optional[Person], response: fas)
+@app.get("/persons/{name}", response_model=typing.Optional[Person], response: fastapi.Response)
 def get_person(name: str):
     # use a generator:
     # first element matching a predicate in a list:
     generator = (p for p in persons if p.name.lower() == name)
-    return next(generator, None)
+    first = next(generator, None)
+    if not first:
+        response.
 
 
 # Route: POST-Request to http://localhost:8000/persons
