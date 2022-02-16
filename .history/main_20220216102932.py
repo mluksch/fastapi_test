@@ -32,7 +32,7 @@ import fastapi.encoders as encoders
 # - Defining Dataclass Types (which are used by FastAPI especially for the Request Body)
 # - data validation of input parameter
 # - parsing & formatting (dataclass) objects to & from JSON
-import pydantic
+from pydantic import 
 
 # Start app by: "pipenv run uvicorn main:app --reload"
 # "--reload" for hot-reload on code changes
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 # out of the box
 
 
-class Person(pydantic.BaseModel):
+class Person(BaseModel):
     name: str
     age: typing.Optional[int]
 

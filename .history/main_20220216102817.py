@@ -1,10 +1,3 @@
-"""
-Testing out FastAPI
-"""
-# standard python3 libs used for typing:
-import enum
-import typing
-
 # FastApi is built upon Starlette whichs is an ASGI implmentation
 # and Uvicorn is a server which is capable of running ASGI-Apps
 import uvicorn
@@ -59,7 +52,7 @@ if __name__ == "__main__":
 # out of the box
 
 
-class Person(pydantic.BaseModel):
+class Person(BaseModel):
     name: str
     age: typing.Optional[int]
 

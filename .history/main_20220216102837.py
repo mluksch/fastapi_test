@@ -1,6 +1,4 @@
-"""
-Testing out FastAPI
-"""
+""""
 # standard python3 libs used for typing:
 import enum
 import typing
@@ -59,7 +57,7 @@ if __name__ == "__main__":
 # out of the box
 
 
-class Person(pydantic.BaseModel):
+class Person(BaseModel):
     name: str
     age: typing.Optional[int]
 

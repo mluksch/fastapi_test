@@ -1,12 +1,6 @@
-"""
-Testing out FastAPI
-"""
-# standard python3 libs used for typing:
-import enum
-import typing
-
 # FastApi is built upon Starlette whichs is an ASGI implmentation
 # and Uvicorn is a server which is capable of running ASGI-Apps
+from pydantic import BaseModel
 import uvicorn
 
 
@@ -18,6 +12,10 @@ import uvicorn
 # (2) built-in data validation
 # (3) websocket-support
 # (4) automatic documentation of API endpoints
+
+# standard python3 libs used for typing:
+import enum
+import typing
 
 # FastApi-Lib
 # FastAPI implements ASGI interface
@@ -59,7 +57,8 @@ if __name__ == "__main__":
 # out of the box
 
 
-class Person(pydantic.BaseModel):
+
+class Person(BaseModel):
     name: str
     age: typing.Optional[int]
 
@@ -141,13 +140,13 @@ async def items(
     """
     # builtin-function "sorted" returns new list
     def key_func(person: Person) -> typing.Union[str, int]:
-        if order_by == OrderBy.NAME:
+        if orderby == OrderBy.NAME:
             return person.name
-        elif order_by == OrderBy.AGE:
+        elif orderby == OrderBy.AGE:
             return person.age
 
     filtered: typing.List[Person] = sorted([p for p in persons
-                                            if not filter_by or filter_by in p.name.lower()][0: limit],
+                                            if not filter or filter in p.name.lower()][0: limit],
                                            key=key_func)
     return filtered
 
