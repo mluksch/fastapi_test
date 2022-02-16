@@ -1,8 +1,3 @@
-# FastApi is built upon Starlette whichs is an ASGI implmentation
-# and Uvicorn is a server which is capable of running ASGI-Apps
-import uvicorn
-
-
 # FastApi has some advantages:
 # (1) asynchronous/non-blocking i.e. not every request handlers needs to run in its own thread
 # and blocks any other executions within the same thread.
@@ -36,9 +31,6 @@ import pydantic
 # Endpoint exposed at: http://localhost:8000
 # SwaggerUI-Docs exposed at: http://localhost:8000/docs
 app = fastapi.FastAPI()
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
 
 ######### Types in FastAPI #########
 # Typing is essential & important in FastAPI:
@@ -160,7 +152,7 @@ async def items(
 @app.get("/persons/{name}", response_model=typing.Optional[Person])
 def get_person(name: str, response: fastapi.Response):
     """
-    Will return a Person or 404, if person does not exist
+    
     """
     # use a generator:
     # first element matching a predicate in a list:

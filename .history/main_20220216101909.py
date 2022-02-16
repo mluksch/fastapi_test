@@ -37,9 +37,6 @@ import pydantic
 # SwaggerUI-Docs exposed at: http://localhost:8000/docs
 app = fastapi.FastAPI()
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
 ######### Types in FastAPI #########
 # Typing is essential & important in FastAPI:
 # Because all validations & documentation & behaviour
