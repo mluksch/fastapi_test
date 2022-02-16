@@ -1,1 +1,4 @@
 .idea
+.history
+.vscode
+__pycache__/

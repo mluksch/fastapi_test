@@ -123,6 +123,7 @@ def index():
 # Types are used by FastAPI for validation & documentation.
 #
 # response_model:
+
 # Data that is not part of response_model-Pydantic-Dataclass
 # will get filtered out.
 
@@ -170,7 +171,8 @@ def get_person(name: str, response: fastapi.Response):
     generator = (p for p in persons if p.name.lower() == name)
     first = next(generator, None)
     if not first:
-        response.status_code = fastapi.status.HTTP_404_NOT_FOUND
+        #response.status_code = fastapi.status.HTTP_404_NOT_FOUND
+        response.status_
         return None
     return first
 
