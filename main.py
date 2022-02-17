@@ -29,9 +29,9 @@ import fastapi.encoders as encoders
 
 # Pydantic is mainly a parsing library
 # and is used by FastAPI for:
-# - Defining Dataclass Types (which are used by FastAPI especially for the Request Body)
-# - data validation of input parameter
-# - parsing & formatting (dataclass) objects to & from JSON
+# - data validation
+# - parsing/formatting objects to/from JSON
+# - BaseModel-subclasses are expected in the request body
 import pydantic
 
 # Start app by: "pipenv run uvicorn main:app --reload"
@@ -96,10 +96,22 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
 # in order to get implicitly formatted by FastAPI to a JSON-response
 
 
-@app.get("/")
+@app.get("/",
+         # put the endpoint into categories into the /docs by tags
+         tags=["senseless index endpoint"],
+         # Summary visible on top-level on the /docs-page
+         summary="My senseless endpoint visible in the docs",
+         # description can also put into the docstring below
+         description="Description hidden the details of the endpoint doc"
+         )
 def index():
-    """Documentation available at http://localhost:8000/docs
-    Returns some random dict
+    # Docstring of the request handler is not visible
+    """
+    Lorem ipsum here is not visible because
+    it's overwritten by description above
+
+    - **arg1** My 1st argument
+    - **arg2** My 2nd argument
     """
     # explicit encoding is not required here
     # because it is a dict.
@@ -128,7 +140,7 @@ def index():
 # will get filtered out.
 
 
-@app.get("/persons", response_model=typing.List[Person])
+@app.get("/persons", response_model=typing.List[Person], tags=["persons", "list"], summary="List all persons")
 async def items(
         # defining Optional parameter:
         filter_by: typing.Optional[str] = None,
@@ -136,9 +148,13 @@ async def items(
         order_by: OrderBy = OrderBy.NAME
 ):
     """
-    Just some Docstring here for SwaggerUi describing the endpoint.
+    Alternative place for the description instead of in the decorator. Just some Docstring
+    here for SwaggerUi describing the endpoint.
+    Returns all persons based on filter, limited & ordered.
 
-    - Returns all persons based on filter, limited & ordered
+    - **filter_by** optional searchterm for person name
+    - **limit** max result size
+    - **order_by** either "name" or "age"
     """
     # builtin-function "sorted" returns new list
     def key_func(person: Person) -> typing.Union[str, int]:
@@ -161,7 +177,9 @@ async def items(
 # & are provided by kwargs-parameter to the request Handler:
 
 
-@app.get("/persons/{name}", response_model=typing.Optional[Person])
+@app.get("/persons/{name}", response_model=typing.Optional[Person], 
+tags=["persons", "one"], 
+summary="Get a person's data")
 def get_person(name: str, response: fastapi.Response):
     """
     Will return a Person or 404, if person does not exist
@@ -180,7 +198,14 @@ def get_person(name: str, response: fastapi.Response):
 
 # Route: POST-Request to http://localhost:8000/persons
 # Re
-@app.post("/persons", response_model=Person)
+@app.post("/persons", response_model=Person, 
+tags=["persons", "create"], 
+summary="Create a new person here")
 async def add_person(person: Person) -> Person:
+    """
+    Here the arguments:
+    - **name** mandatory string
+    - **age** optional int
+    """
     persons.append(person)
     return person
