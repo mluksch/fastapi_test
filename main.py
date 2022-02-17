@@ -107,14 +107,17 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
 def index():
     # Docstring of the request handler is not visible
     """
-    ALternative place for the endpoint description,
-    there is more text.
-    But it gets overwritten, if there has been passed a description above
+    Description in the docstring
+    ALternative place for the endpoint description for multiline text.
+    Otherwise any onliner description can be easily put in the decorator alternatively.
+    However the docstring description will get overwritten, 
+    if the description had already been passed to the decorator
     in the decorator
 
-    **Double stars** make things bold
+    **Double stars** make things bold in the description,
+    just like in a normal docstring
 
-    - Hyphen for listing texts
+    - Hyphen for listing texts just like in normal docstring
     - Hyphen
 
     - **arg1** My 1st argument
