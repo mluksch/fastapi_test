@@ -171,8 +171,9 @@ def get_person(name: str, response: fastapi.Response):
     generator = (p for p in persons if p.name.lower() == name)
     first = next(generator, None)
     if not first:
-        #response.status_code = fastapi.status.HTTP_404_NOT_FOUND
-        response.status_
+        # change statuscode on fastapi.Response
+        # passed as argument to request handler
+        response.status_code = fastapi.status.HTTP_404_NOT_FOUND
         return None
     return first
 

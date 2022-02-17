@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [scripts]
-dev = "pipenv run uvicorn main:app --reload"
+dev = "pipenv run python main.py"
 
 [packages]
 fastapi = "*"
