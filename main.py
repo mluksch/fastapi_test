@@ -107,8 +107,15 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
 def index():
     # Docstring of the request handler is not visible
     """
-    Lorem ipsum here is not visible because
-    it's overwritten by description above
+    ALternative place for the endpoint description,
+    there is more text.
+    But it gets overwritten, if there has been passed a description above
+    in the decorator
+
+    **Double stars** make things bold
+
+    - Hyphen for listing texts
+    - Hyphen
 
     - **arg1** My 1st argument
     - **arg2** My 2nd argument
