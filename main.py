@@ -2,6 +2,7 @@
 Testing out FastAPI
 """
 # standard python3 libs used for typing:
+import datetime
 import enum
 import typing
 
@@ -42,6 +43,7 @@ app = fastapi.FastAPI()
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
 
 ######### Types in FastAPI #########
 # Typing is essential & important in FastAPI:
@@ -187,9 +189,9 @@ async def items(
 # & are provided by kwargs-parameter to the request Handler:
 
 
-@app.get("/persons/{name}", response_model=typing.Optional[Person], 
-tags=["persons", "one"], 
-summary="Get a person's data")
+@app.get("/persons/{name}", response_model=typing.Optional[Person],
+         tags=["persons", "one"],
+         summary="Get a person's data")
 def get_person(name: str, response: fastapi.Response):
     """
     Will return a Person or 404, if person does not exist
@@ -207,10 +209,9 @@ def get_person(name: str, response: fastapi.Response):
 
 
 # Route: POST-Request to http://localhost:8000/persons
-# Re
-@app.post("/persons", response_model=Person, 
-tags=["persons", "create"], 
-summary="Create a new person here")
+@app.post("/persons", response_model=Person,
+          tags=["persons", "create"],
+          summary="Create a new person here")
 async def add_person(person: Person) -> Person:
     """
     Here the arguments:
@@ -219,3 +220,66 @@ async def add_person(person: Person) -> Person:
     """
     persons.append(person)
     return person
+
+
+# Using Routers in FastAPI for separating paths from each other
+# You can mount Routers to the FastAPI-app.
+post_router = fastapi.APIRouter(prefix="/posts", tags=["posts"])
+
+
+class Post(pydantic.BaseModel):
+    id: int
+    text: str
+    author: Person
+    date: datetime.datetime
+
+
+posts: typing.List[Post] = [
+    Post(id=0, text="Hello how are you?",
+         author=persons[0], date=datetime.datetime.now() - datetime.timedelta(days=10)),
+    Post(id=1, text="Im fine",
+         author=persons[1], date=datetime.datetime.now() - datetime.timedelta(days=9)),
+    Post(id=2, text="Nice to meet you",
+         author=persons[0], date=datetime.datetime.now() - datetime.timedelta(days=8))
+]
+
+
+@post_router.get("/", tags=["list"], response_model=typing.List[Post], description="List all Posts")
+async def get_posts():
+    return posts
+
+
+@post_router.get("/{post_id}", tags=["one"], response_model=typing.Optional[Post])
+async def get_post(post_id: int, response: fastapi.Response):
+    # next takes a generator and a default value which prevents raising an exception
+    first = next((post for post in posts if post.id == post_id), None)
+    if not first:
+        response.status_code = fastapi.status.HTTP_404_NOT_FOUND
+        return None
+    return first
+
+# Make id optional in Post-class
+
+
+class NewPost(pydantic.BaseModel):
+    text: str
+    author_name: str
+
+
+@post_router.post("/", tags=["create"], summary="This creates a new post")
+async def create_post(new_post: NewPost, response: fastapi.Response):
+    """
+    Creates a new Post
+    """
+    author_person = next(
+        (person for person in persons if person.name == new_post.author_name), None)
+    if not author_person:
+        response.status_code = fastapi.status.HTTP_404_NOT_FOUND
+        return None
+    created_post = Post(id=len(posts), text=new_post.text,
+                        author=author_person, date=datetime.datetime.now())
+    posts.append(created_post)
+    return created_post
+
+
+app.include_router(post_router)
