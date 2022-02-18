@@ -170,10 +170,13 @@ def index():
 async def items(
         # defining Optional parameter:
         # filter_by: typing.Optional[str] = None,
-        # Assigning default values to Parameters:
-        # (Query-Parameter with Metadata: title + description)
+
+        # Add query-parameter metadata
+        # (Query-Parameter with Metadata: title + description + alias)
         filter_by: typing.Optional[str] = fastapi.Query(None, title="Title: Not displayed in the /docs",
-                                                        description="Description: Displayed in the /docs"),
+                                                        description="Description: Displayed in the /docs",
+                                                        # alias used as query parameter
+                                                        alias="filter"),
         # Assigning default values to Parameters:
         # (Query-Parameter without any Metadata)
         limit: int = 10,
@@ -214,7 +217,9 @@ async def items(
 @app.get("/persons/{name}", response_model=typing.Optional[Person],
          tags=["persons", "one"],
          summary="Get a person's data")
-def get_person(name: str, response: fastapi.Response):
+def get_person(response: fastapi.Response,
+               # add path-parameter metadata (analogue to query parameters)
+               name: str = fastapi.Path(None, description="The name of the person")):
     """
     Will return a Person or 404, if person does not exist
     """
@@ -235,7 +240,11 @@ def get_person(name: str, response: fastapi.Response):
 @app.post("/persons", response_model=Person,
           tags=["persons", "create"],
           summary="Create a new person here")
-async def add_person(person: Person) -> Person:
+async def add_person(
+        # Add metadata for body-parameter (analogue to Query-Metadata)
+        person: Person = fastapi.Body(None,
+                                      title="Not visible in /docs",
+                                      description="Not visible in /docs")) -> Person:
     """
     Here the arguments:
     - **name** mandatory string
