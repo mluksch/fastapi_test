@@ -99,7 +99,6 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
 
 # Metadata about the endpoint, such as:
 # summary, description, tags, response_model are put into the Route-decorator
-# However request-data, response-data are put into the parameter-list:
 @app.get("/",
          # put the endpoint into categories into the /docs by tags
          tags=["senseless index endpoint"],
@@ -108,6 +107,7 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
          # description can also put into the docstring below
          description="Description hidden the details of the endpoint doc"
          )
+# However request-data, response-data are put into the parameter-list:         
 def index():
     # Docstring of the request handler is not visible
     """
@@ -153,8 +153,10 @@ def index():
 # Data that is not part of response_model-Pydantic-Dataclass
 # will get filtered out.
 
-
+# In the Route-Decorator provide Metadata about the endpoint,
+# used for validation, parsing, /docs-page
 @app.get("/persons", response_model=typing.List[Person], tags=["persons", "list"], summary="List all persons")
+# In the Request-Handler provide (not Metadata) but the data itself:
 async def items(
         # defining Optional parameter:
         filter_by: typing.Optional[str] = None,
