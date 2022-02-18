@@ -97,7 +97,9 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
 # Should return either a dict or a Pydantic-BaseModel-object
 # in order to get implicitly formatted by FastAPI to a JSON-response
 
-
+# Metadata about the endpoint, such as:
+# summary, description, tags, response_model are put into the Route-decorator
+# However request-data, response-data are put into the parameter-list:
 @app.get("/",
          # put the endpoint into categories into the /docs by tags
          tags=["senseless index endpoint"],
@@ -112,7 +114,7 @@ def index():
     Description in the docstring
     ALternative place for the endpoint description for multiline text.
     Otherwise any onliner description can be easily put in the decorator alternatively.
-    However the docstring description will get overwritten, 
+    However the docstring description will get hidden/shadowed on /docs-page, 
     if the description had already been passed to the decorator
     in the decorator
 
