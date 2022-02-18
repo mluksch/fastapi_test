@@ -154,7 +154,8 @@ def index():
 # will get filtered out.
 
 # In the Route-Decorator provide Metadata about the endpoint,
-# used for validation, parsing, /docs-page
+# used for validation, parsing/formatting (response_model)
+# /docs-page (summary, tags, description)
 @app.get("/persons", response_model=typing.List[Person], tags=["persons", "list"], summary="List all persons")
 # In the Request-Handler provide (not Metadata) but the data itself:
 async def items(
