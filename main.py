@@ -6,10 +6,22 @@ import datetime
 import enum
 import typing
 
+# FastApi-Lib
+# FastAPI implements ASGI interface
+# and can be started by any ASGI compliant server
+# such as uvicorn:
+# "pipenv run uvicorn <file>:<FastApi-App-object> --reload"
+import fastapi
+import fastapi.encoders as encoders
+# Pydantic is mainly a parsing library
+# and is used by FastAPI for:
+# - data validation
+# - parsing/formatting objects to/from JSON
+# - BaseModel-subclasses are expected in the request body
+import pydantic
 # FastApi is built upon Starlette whichs is an ASGI implmentation
 # and Uvicorn is a server which is capable of running ASGI-Apps
 import uvicorn
-
 
 # FastApi has some advantages:
 # (1) asynchronous/non-blocking i.e. not every request handlers needs to run in its own thread
@@ -19,21 +31,6 @@ import uvicorn
 # (2) built-in data validation
 # (3) websocket-support
 # (4) automatic documentation of API endpoints
-
-# FastApi-Lib
-# FastAPI implements ASGI interface
-# and can be started by any ASGI compliant server
-# such as uvicorn:
-# "pipenv run uvicorn <file>:<FastApi-App-object> --reload"
-import fastapi
-import fastapi.encoders as encoders
-
-# Pydantic is mainly a parsing library
-# and is used by FastAPI for:
-# - data validation
-# - parsing/formatting objects to/from JSON
-# - BaseModel-subclasses are expected in the request body
-import pydantic
 
 # Start app by: "pipenv run uvicorn main:app --reload"
 # "--reload" for hot-reload on code changes
@@ -65,6 +62,7 @@ class Person(pydantic.BaseModel):
     name: str
     age: typing.Optional[int]
 
+
 # Define a Custom-Enum
 # Enums are subclass of str + Enum:
 
@@ -85,6 +83,7 @@ persons: typing.List[Person] = [Person(**kwargs) for kwargs in [
     {"name": "Ashley", "age": 70},
     {"name": "Jack", "age": 80}
 ]]
+
 
 ######## Request Handler declaration ########
 # The order of request handler declaration is important/relevant
@@ -137,6 +136,13 @@ def index():
         "name": "Max"
     })
 
+
+#### Adding Metadata to Parameter by assigning Metadata as default parameter #####
+# (1) Route-Parameters
+# (2) Query-Parameters: Query(None, title="My title doesnt show up", description="My description")
+# (3) Body-Parameters
+
+
 ########## Query-Parameters ##########
 # Route: http://localhost:8000/persons?filter=j&limit=2&orderby=age
 # Returns: [{"name":"Judy","age":10},{"name":"Jeremy","age":20}]
@@ -157,12 +163,20 @@ def index():
 # used for validation, parsing/formatting (response_model)
 # /docs-page (summary, tags, description)
 @app.get("/persons", response_model=typing.List[Person], tags=["persons", "list"], summary="List all persons")
-# In the Request-Handler provide (not Metadata) but the data itself:
+# In the Request-Handler provide the parameters/data itself:
 async def items(
         # defining Optional parameter:
-        filter_by: typing.Optional[str] = None,
+        # filter_by: typing.Optional[str] = None,
+        # Assigning default values to Parameters:
+        # (Query-Parameter with Metadata: title + description)
+        filter_by: typing.Optional[str] = fastapi.Query(None, title="Title: Not displayed in the /docs",
+                                                        description="Description: Displayed in the /docs"),
+        # Assigning default values to Parameters:
+        # (Query-Parameter without any Metadata)
         limit: int = 10,
-        order_by: OrderBy = OrderBy.NAME
+        # Assigning default values to Parameters:
+        # (Query-Parameter with Metadata)
+        order_by: OrderBy = fastapi.Query(OrderBy.NAME, description="Order by age or name")
 ):
     """
     Alternative place for the description instead of in the decorator. Just some Docstring
@@ -173,6 +187,7 @@ async def items(
     - **limit** max result size
     - **order_by** either "name" or "age"
     """
+
     # builtin-function "sorted" returns new list
     def key_func(person: Person) -> typing.Union[str, int]:
         if order_by == OrderBy.NAME:
@@ -185,6 +200,7 @@ async def items(
                                            key=key_func)
     return filtered
 
+
 ########## Path-Parameters ##########
 # Route: http://localhost:8000/persons/jack
 # Returns: {"name":"Jack","age":80}
@@ -192,8 +208,6 @@ async def items(
 # Parameters that are part of the
 # path-definition: "/../{my_key}/.." are called Path-Parameters
 # & are provided by kwargs-parameter to the request Handler:
-
-
 @app.get("/persons/{name}", response_model=typing.Optional[Person],
          tags=["persons", "one"],
          summary="Get a person's data")
@@ -213,6 +227,7 @@ def get_person(name: str, response: fastapi.Response):
     return first
 
 
+########## Body-Parameter ##########
 # Route: POST-Request to http://localhost:8000/persons
 @app.post("/persons", response_model=Person,
           tags=["persons", "create"],
@@ -262,6 +277,7 @@ async def get_post(post_id: int, response: fastapi.Response):
         response.status_code = fastapi.status.HTTP_404_NOT_FOUND
         return None
     return first
+
 
 # Make id optional in Post-class
 
