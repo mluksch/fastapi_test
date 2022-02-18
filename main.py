@@ -51,23 +51,24 @@ if __name__ == "__main__":
 # belong to the request body (BaseModel)
 # or to the query parameters
 
-# Declare a Pydantic-Dataclass:
-# By deriving from Basemodel
-# you get json parsing, formatting, validation, documentation,
-# an __init__-constructor with kwargs
-# out of the box
-
 
 class Person(pydantic.BaseModel):
+    """
+    Declare a Pydantic-Dataclass:
+    By deriving from Basemodel
+    you get json parsing, formatting, validation, documentation,
+    an __init__-constructor with kwargs, object.property-access
+    out of the box
+    """
     name: str
     age: typing.Optional[int]
 
 
-# Define a Custom-Enum
-# Enums are subclass of str + Enum:
-
-
 class OrderBy(str, enum.Enum):
+    """
+    Define a Custom-Enum
+    Enums are subclass of str + Enum:
+    """
     AGE = "age"
     NAME = "name"
 
@@ -137,9 +138,11 @@ def index():
     })
 
 
-#### Adding Metadata to Parameter by assigning Metadata as default parameter #####
+#### Adding Metadata to single Parameters
+# by assigning Metadata as default parameter #####
 # (1) Route-Parameters
-# (2) Query-Parameters: Query(None, title="My title doesnt show up", description="My description")
+# (2) Query-Parameters:
+# def index(arg = Query(None, title="My title doesnt show up", description="My description")
 # (3) Body-Parameters
 
 
@@ -272,6 +275,11 @@ async def get_posts():
 @post_router.get("/{post_id}", tags=["one"], response_model=typing.Optional[Post])
 async def get_post(post_id: int, response: fastapi.Response):
     # next takes a generator and a default value which prevents raising an exception
+    # using a generator comprehension/expression
+    # similar to python's list comprehension
+    # but lazily evaluated.
+    # With generator expressions Python can express
+    # constructs such as infinite sequences
     first = next((post for post in posts if post.id == post_id), None)
     if not first:
         response.status_code = fastapi.status.HTTP_404_NOT_FOUND
