@@ -172,11 +172,17 @@ async def items(
         # filter_by: typing.Optional[str] = None,
 
         # Add query-parameter metadata
-        # (Query-Parameter with Metadata: title + description + alias)
+        # (Query-Parameter with Metadata: title + description + alias + validators)
         filter_by: typing.Optional[str] = fastapi.Query(None, title="Title: Not displayed in the /docs",
                                                         description="Description: Displayed in the /docs",
                                                         # alias used as query parameter
-                                                        alias="filter"),
+                                                        alias="filter",
+                                                        # some validators:
+                                                        # doesnt make sense here though
+                                                        min_length=3,
+                                                        max_length=10,
+                                                        regex="(name|age)"
+                                                        ),
         # Assigning default values to Parameters:
         # (Query-Parameter without any Metadata)
         limit: int = 10,
@@ -219,7 +225,14 @@ async def items(
          summary="Get a person's data")
 def get_person(response: fastapi.Response,
                # add path-parameter metadata (analogue to query parameters)
-               name: str = fastapi.Path(None, description="The name of the person")):
+               name: str = fastapi.Path(None,
+                                        description="The name of the person",
+                                        # some validators:
+                                        min_length=3,
+                                        max_length=10,
+                                        # regex: only letters allowed, min. 3 letters
+                                        regex='^[a-zA-Z]{3,}$'
+                                        )):
     """
     Will return a Person or 404, if person does not exist
     """
@@ -244,7 +257,8 @@ async def add_person(
         # Add metadata for body-parameter (analogue to Query-Metadata)
         person: Person = fastapi.Body(None,
                                       title="Not visible in /docs",
-                                      description="Not visible in /docs")) -> Person:
+                                      description="Not visible in /docs")
+) -> Person:
     """
     Here the arguments:
     - **name** mandatory string
