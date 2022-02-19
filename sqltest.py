@@ -1,103 +1,78 @@
 # Super simple FastAPI Database integration
-import datetime
 import typing
 
 import fastapi
+import pydantic
 import sqlmodel
 import uvicorn
 
-metadata = sqlmodel.MetaData()
+# Take care:
+# !!!DB-Models & FastAPI need to be in different files!!!
+# Otherwise sqlmodel-magic gets confused with
+# mutually dependent Relationships of table
+import db
 
 
-# create model-subclasses derived from sqlmodel.SQLModel:
-# SQLModel-classes are both:
-# Pydantic-dataclasses + SqlALchemy-Table-classes
-class PersonBase(sqlmodel.SQLModel):
-    name: str = sqlmodel.Field(None,
-                               # Creates a Table-Index on this field in SQL:
-                               index=True,
-                               description="The name of the person")
+# Define FastAPI's Input + Output types:
+class PersonInput(pydantic.BaseModel):
+    age: typing.Optional[int]
+    name: str
+
+
+class PersonOutput(pydantic.BaseModel):
+    id: str
+    name: str
     age: typing.Optional[int]
 
 
-class PostBase(sqlmodel.SQLModel, table=False):
-    id: int = sqlmodel.Field(primary_key=True)
-    comment: str
-
-
-# Define Table classes:
-
-
-class Person(PersonBase, table=True):
-    __table_args__ = {'extend_existing': True}
-    id: typing.Optional[int] = sqlmodel.Field(primary_key=True, description="id of person")
-    updatedOn: datetime.datetime = sqlmodel.Field(alias="updated_on")
-    createdOn: datetime.datetime = sqlmodel.Field(alias="created_on")
-    # relationship
-    # posts: List["sqltest.Post"] = sqlmodel.Relationship(back_populates="author")
-
-
-class Post(PostBase, table=True):
-    __table_args__ = {'extend_existing': True}
-    # foreign key field:
-    author_id: int = sqlmodel.Field(foreign_key="person.id")
-    # relationships: https://sqlmodel.tiangolo.com/tutorial/relationship-attributes/define-relationships-attributes/
-    # use string here due to order of class declaration & cyclic mutual reference:
-    # avoids error "class is not defined"
-    # author: "sqltest.Person" = sqlmodel.Relationship(back_populates="posts")
-    updated_on: datetime.datetime
-    created_on: datetime.datetime
-
-
-# Define FastAPI's Input + Output types
-class PersonInput(PersonBase):
-    pass
-
-
-class PersonOutput(PersonBase):
-    pass
-
-
-class PostInput(PostBase):
+class PostInput(pydantic.BaseModel):
     authorName: str
 
 
-class PostOutput(PostBase):
+class PostOutput(pydantic.BaseModel):
     authorName: str
 
-
-engine = sqlmodel.create_engine("sqlite:///test.db", future=True, echo=True)
 
 app = fastapi.FastAPI()
-
-try:
-    # sqlmodel.SQLModel.metadata.create_all(engine)
-    pass
-except Exception:
-    pass
+engine = sqlmodel.create_engine("sqlite:///test.db", future=True, echo=True)
 
 
 @app.on_event("startup")
 def on_startup():
-    pass
+    sqlmodel.SQLModel.metadata.create_all(engine)
 
 
-# Create all tables (which are subclassed)
-sqlmodel.SQLModel.metadata.create_all(engine)
-
-
+# Factory function for sessions
+# used to for session-injection into request handler
 def get_session():
     with sqlmodel.Session(engine) as session:
         yield session
 
 
 @app.post("/person", response_model=PersonOutput)
-def create_person(person: PersonInput, session: sqlmodel.Session = fastapi.Depends(get_session)):
-    now = datetime.datetime.now()
-    new_person: Person = Person(name=person.name, age=person.age, updated_on=now, created_on=now)
+def create_person(
+        # request body data:
+        person: PersonInput,
+        # inject a session:
+        session: sqlmodel.Session = fastapi.Depends(get_session)):
+    new_person: db.Person = db.Person(name=person.name, age=person.age)
     session.add(new_person)
     session.commit()
+    # normally SQLAlchemy refetches data from the DB after a commit,
+    # if fields are getting accessed.
+    # But that SQLAlchemy-magic is not triggered here,
+    # if the model is returned to FastAPI.
+    # We need an explicit refresh therefore
+    session.refresh(new_person)
     return new_person
+
+
+@app.get("/person", response_model=typing.List[PersonOutput])
+def get_persons(
+        session: sqlmodel.Session = fastapi.Depends(get_session)):
+    # scalars(): transform results to object.property-syntax instead dicts
+    # otherwise Pydantic cannot transform results to json:
+    return session.execute(sqlmodel.select(db.Person)).scalars().all()
 
 
 if __name__ == "__main__":
