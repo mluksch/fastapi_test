@@ -69,10 +69,25 @@ def create_person(
 
 @app.get("/person", response_model=typing.List[PersonOutput])
 def get_persons(
-        session: sqlmodel.Session = fastapi.Depends(get_session)):
+        sort_by: str = fastapi.Query(default="name",
+                                     # visible in the /docs:
+                                     description="Sort by name or age",
+                                     # alias used as query parameter:
+                                     alias="sortby"),
+        session: sqlmodel.Session = fastapi.Depends(get_session)
+):
     # scalars(): transform results to object.property-syntax instead dicts
     # otherwise Pydantic cannot transform results to json:
-    return session.execute(sqlmodel.select(db.Person)).scalars().all()
+    return session.execute(sqlmodel.select(db.Person).order_by(sort_by)).scalars().all()
+
+
+@app.get("/person/{name}", summary="get a person by his/her name", response_model=PersonOutput)
+def get_person(name: str, session: sqlmodel.Session = fastapi.Depends(get_session)):
+    # - one() throws an Exception, if no result has been found
+    # - first() returns None, if no result has been found
+    # Important: ALways use scalars()!!
+    result = session.execute(sqlmodel.select(db.Person).where(db.Person.name == name)).scalars().one()
+    return PersonOutput(id=result.id, name=result.name, age=result.age)
 
 
 if __name__ == "__main__":
