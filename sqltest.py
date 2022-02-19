@@ -19,18 +19,21 @@ class PersonInput(pydantic.BaseModel):
     name: str
 
 
+class PostOutput(pydantic.BaseModel):
+    id: int
+    comment: str
+
+
 class PersonOutput(pydantic.BaseModel):
     id: str
     name: str
     age: typing.Optional[int]
+    posts: typing.Optional[typing.List[PostOutput]]
 
 
 class PostInput(pydantic.BaseModel):
     authorName: str
-
-
-class PostOutput(pydantic.BaseModel):
-    authorName: str
+    comment: str
 
 
 app = fastapi.FastAPI()
@@ -81,13 +84,30 @@ def get_persons(
     return session.execute(sqlmodel.select(db.Person).order_by(sort_by)).scalars().all()
 
 
+import sqlalchemy.orm as orm
+
+
 @app.get("/person/{name}", summary="get a person by his/her name", response_model=PersonOutput)
 def get_person(name: str, session: sqlmodel.Session = fastapi.Depends(get_session)):
     # - one() throws an Exception, if no result has been found
     # - first() returns None, if no result has been found
     # Important: ALways use scalars()!!
-    result = session.execute(sqlmodel.select(db.Person).where(db.Person.name == name)).scalars().one()
-    return PersonOutput(id=result.id, name=result.name, age=result.age)
+    # Since relationships are by default lazily loaded & not fetched until
+    # the fields are actually accessed, we need to
+    # explicitly tell sqlAlchemy to fetch all relationships:
+    # "options(orm.selectinload(db.Person.posts))"
+    return session.execute(sqlmodel.select(db.Person).options(orm.selectinload(db.Person.posts)).where(
+        db.Person.name == name)).scalars().one()
+
+
+@app.post("/post", summary="Creates a Post", response_model=PostOutput)
+def create_post(new_post: PostInput, session: sqlmodel.Session = fastapi.Depends(get_session)):
+    author = session.execute(sqlmodel.select(db.Person).where(db.Person.name == new_post.authorName)).scalars().one()
+    post = db.Post(comment=new_post.comment, author=author)
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+    return post
 
 
 if __name__ == "__main__":
