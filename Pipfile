@@ -4,7 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [scripts]
-dev = "pipenv run python main.py"
+basics = "pipenv run python 01_fastapi_basics.py"
+db = "pipenv run python 02_fastapi_with_db.py"
 
 [packages]
 fastapi = "==0.73.0"
