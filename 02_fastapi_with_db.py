@@ -111,4 +111,4 @@ def create_post(new_post: PostInput, session: sqlmodel.Session = fastapi.Depends
 
 
 if __name__ == "__main__":
-    uvicorn.run("sqltest:app", host="0.0.0.0", port=9000, reload=True)
+    uvicorn.run("02_fastapi_with_db:app", host="0.0.0.0", port=8000, reload=True)
